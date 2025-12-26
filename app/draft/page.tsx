@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
-import { Navbar } from "@/components/navbar"
 import { DraftReviewForm } from "@/components/draft-review-form"
 
 const DraftMapPreview = dynamic(() => import("@/components/draft-map-preview"), {
@@ -37,7 +36,6 @@ export default function DraftPage() {
   if (loading) {
     return (
       <div className="w-full h-screen flex flex-col">
-        <Navbar />
         <div className="flex-1 flex items-center justify-center">
           <p className="text-muted-foreground">Loading draft...</p>
         </div>
@@ -51,7 +49,6 @@ export default function DraftPage() {
 
   return (
     <div className="w-full min-h-screen flex flex-col bg-background">
-      <Navbar />
       <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-8">
         <div className="space-y-6">
           <div>
