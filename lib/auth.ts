@@ -1,16 +1,9 @@
-import bcrypt from "bcryptjs"
 import { supabase } from "./supabaseClient"
 
-export async function signUp(
-  email: string,
-  password: string,
-) {
-  // hash password on client
-  const hashedPassword = await bcrypt.hash(password, 10)
-
+export async function signUp(email: string, password: string) {
   const { error } = await supabase.from("users").insert({
     email,
-    password: hashedPassword,
+    password, // plain text (education only)
   })
 
   if (error) {
@@ -18,26 +11,18 @@ export async function signUp(
   }
 }
 
-
 export async function login(email: string, password: string) {
   const { data: user, error } = await supabase
     .from("users")
     .select("*")
     .eq("email", email)
+    .eq("password", password)
     .single()
 
   if (error || !user) {
-    throw new Error("User not found")
+    throw new Error("Invalid email or password")
   }
 
-  const match = await bcrypt.compare(password, user.password)
-
-  if (!match) {
-    throw new Error("Invalid password")
-  }
-
-  // store user (education only)
   localStorage.setItem("user", JSON.stringify(user))
-
   return user
 }
