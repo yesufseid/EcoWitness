@@ -2,21 +2,23 @@
 
 import { Button } from "@/components/ui/button"
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 
 type User = {
   email: string
-  role: string
+  role: "user" | "student" | "regulator"
 }
 
 export function Navbar() {
   const [user, setUser] = useState<User | null>(null)
   const router = useRouter()
-
+  const pathname = usePathname()
+   console.log(pathname);
+   
   useEffect(() => {
     const storedUser = localStorage.getItem("user")
     if (storedUser) {
-      setUser(JSON.parse(storedUser))  
+      setUser(JSON.parse(storedUser))
     }
   }, [])
 
@@ -25,6 +27,19 @@ export function Navbar() {
     setUser(null)
     router.push("/login")
   }
+
+  // Restrict access based on role
+  useEffect(() => {
+    if (!user) return
+
+    if (user.role === "user" && !["/report"].some((p) => pathname.startsWith(p))) {
+      router.push("/")
+    } else if (user.role === "student" && !["/students"].some((p) => pathname.startsWith(p))) {
+      router.push("/")
+    } else if (user.role === "regulator" && !["/regulator"].some((p) => pathname.startsWith(p))) {
+      router.push("/")
+    }
+  }, [user, pathname, router])
 
   return (
     <nav className="sticky top-0 z-50 w-full bg-background border-b border-border shadow-sm">
@@ -50,6 +65,18 @@ export function Navbar() {
             </>
           ) : (
             <>
+              {/* Report Now button only for "user" role */}
+              {user.role === "user" && (
+                <Button size="sm" className="bg-accent hover:bg-accent/90" onClick={() => router.push("/report")}>
+                  Report Now
+                </Button>
+              )}
+                {user.role === "student" && (
+                <Button size="sm" className="bg-accent hover:bg-accent/90" onClick={() => router.push("/students/dashboard")}>
+                  Dashboard
+                </Button>
+              )}
+
               {/* Profile Circle */}
               <div
                 title={user.email}

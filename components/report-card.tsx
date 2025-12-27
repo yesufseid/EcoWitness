@@ -34,7 +34,7 @@ export function ReportCard({ report }: { report: Report }) {
     )
 
     // 🚀 Navigate to detail page
-    router.push(`/report/${report.id}`)
+    router.push(`/students/dashboard/${report.id}`)
   }
 
   const createdDate = new Date(report.created_at).toLocaleDateString()

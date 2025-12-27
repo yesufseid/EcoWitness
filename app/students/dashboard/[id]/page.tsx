@@ -6,12 +6,17 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { DraftReviewForm } from "@/components/draft-review-form"
 import dynamic from "next/dynamic"
+import { uploadMediaFiles } from "@/lib/uploadMedia"
+import { saveCommentToSupabase } from "@/lib/saveComment"
+
 
 interface Comment {
-  author: string
+  user_id: string
   comment: string
   timestamp: string
+  files?: string[]
 }
+
 
 interface PollutionReport {
   id: string
@@ -32,7 +37,16 @@ export default function ReportDetailsPage() {
   const { id } = useParams()
   const [report, setReport] = useState<PollutionReport | null>(null)
   const [newComment, setNewComment] = useState("")
+  const [commentFiles, setCommentFiles] = useState<File[]>([])
+const [submitting, setSubmitting] = useState(false)
+const [user, setUser] = useState<{ id: string; email: string } | null>(null)
 
+useEffect(() => {
+  const storedUser = localStorage.getItem("user")
+  if (storedUser) {
+    setUser(JSON.parse(storedUser))
+  }
+}, [])
   /* ---------------- LOAD REPORT FROM LOCALSTORAGE ---------------- */
   useEffect(() => {
     const stored = localStorage.getItem(`report-${id}`)
@@ -52,27 +66,63 @@ export default function ReportDetailsPage() {
       })
     }
   }, [id])
+const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  if (e.target.files) {
+    setCommentFiles(Array.from(e.target.files))
+  }
+}
 
   /* ---------------- ADD COMMENT ---------------- */
-  const addComment = () => {
-    if (!newComment.trim() || !report) return
+ const addComment = async () => {
+  if (!newComment.trim() || !report || !user) {
+    alert("You must be logged in to comment")
+    return
+  }
 
+  try {
+    setSubmitting(true)
+
+    // 1. Upload files
+    let fileUrls: string[] = []
+    if (commentFiles.length > 0) {
+      fileUrls = await uploadMediaFiles(commentFiles)
+    }
+
+    // 2. Save to Supabase
+    await saveCommentToSupabase({
+      report_id: report.id,
+      user_id: user.id,
+      comment: newComment,
+      files: fileUrls,
+    })
+
+    // 3. Update UI + localStorage
     const updatedReport: PollutionReport = {
       ...report,
       analysis: [
         ...report.analysis,
         {
-          author: "Anonymous Expert",
+          user_id: user.id,
           comment: newComment,
           timestamp: new Date().toLocaleString(),
+          files: fileUrls,
         },
       ],
     }
 
     setReport(updatedReport)
     localStorage.setItem(`report-${id}`, JSON.stringify(updatedReport))
+
     setNewComment("")
+    setCommentFiles([])
+  } catch (err) {
+    console.error(err)
+    alert("Failed to submit comment")
+  } finally {
+    setSubmitting(false)
   }
+}
+
 
   if (!report) return <p className="p-6">Loading report...</p>
 
@@ -117,7 +167,7 @@ export default function ReportDetailsPage() {
           {report.analysis.length > 0 ? (
             report.analysis.map((c, i) => (
               <div key={i} className="bg-secondary/30 rounded p-3 text-sm">
-                <p className="font-medium">{c.author}</p>
+                <p className="font-medium">{c.user_id}</p>
                 <p className="text-xs text-muted-foreground mb-1">
                   {c.timestamp}
                 </p>
@@ -132,21 +182,40 @@ export default function ReportDetailsPage() {
         </div>
 
         {/* ADD COMMENT */}
-        <div className="border-t pt-4 space-y-3">
-          <textarea
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            placeholder="Write expert analysis or comment..."
-            className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm "
-            rows={3}
-          />
-          <Button
-            onClick={addComment}
-            className="bg-accent hover:bg-accent/90"
-          >
-            Submit Comment
-          </Button>
-        </div>
+       <div className="border-t pt-4 space-y-3">
+  <textarea
+    value={newComment}
+    onChange={(e) => setNewComment(e.target.value)}
+    placeholder="Write expert analysis or comment..."
+    className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm"
+    rows={3}
+  />
+
+  <input
+    type="file"
+    multiple
+    onChange={handleFileChange}
+    className="block text-sm"
+  />
+
+  {commentFiles.length > 0 && (
+    <div className="text-xs text-muted-foreground">
+      {commentFiles.map((f, i) => (
+        <p key={i}>📎 {f.name}</p>
+      ))}
+    </div>
+  )}
+
+  <Button
+    onClick={addComment}
+    disabled={submitting}
+    className="bg-accent hover:bg-accent/90"
+  >
+    {submitting ? "Submitting..." : "Submit Comment"}
+  </Button>
+
+</div>
+
       </Card>
     </div>
   )
