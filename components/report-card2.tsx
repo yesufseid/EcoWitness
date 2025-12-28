@@ -33,7 +33,7 @@ export function ReportCard({ report }: { report: Report }) {
 
   const handleClick = () => {
     localStorage.setItem(`report-${report.id}`, JSON.stringify(report))
-    router.push(`/students/dashboard/${report.id}`)
+    router.push(`/regulatory/dashboard/${report.id}`)
   }
 
   const createdDate = new Date(report.created_at).toLocaleDateString()

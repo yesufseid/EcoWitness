@@ -7,6 +7,9 @@ import { Card } from "@/components/ui/card"
 import dynamic from "next/dynamic"
 import { uploadMediaFiles } from "@/lib/uploadMedia"
 import { saveCommentToSupabase } from "@/lib/saveComment"
+import { getCommentsByReport } from "@/lib/getCommentsByReport"
+import { CommentItem } from "@/components/comment-item"
+
 
 interface Comment {
   user_id: string
@@ -37,6 +40,7 @@ export default function ReportDetailsPage() {
   const [commentFiles, setCommentFiles] = useState<File[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [user, setUser] = useState<{ id: string; email: string } | null>(null)
+  const [comments, setComments] = useState<any[]>([])
 
   /* ---------------- LOAD USER ---------------- */
   useEffect(() => {
@@ -61,6 +65,7 @@ export default function ReportDetailsPage() {
       media: parsed.files || [],
       status: parsed.status || "active",
     })
+    getCommentsByReport(parsed.id as string).then(setComments)
   }, [id])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,22 +92,6 @@ export default function ReportDetailsPage() {
         comment: newComment,
         files: fileUrls,
       })
-
-      // const updatedReport: PollutionReport = {
-      //   ...report,
-      //   analysis: [
-      //     ...report.analysis,
-      //     {
-      //       user_id: user.id,
-      //       comment: newComment,
-      //       timestamp: new Date().toLocaleString(),
-      //       files: fileUrls,
-      //     },
-      //   ],
-      // }
-
-      // setReport(updatedReport)
-      // localStorage.setItem(`report-${id}`, JSON.stringify(updatedReport))
 
       setNewComment("")
       setCommentFiles([])
@@ -158,34 +147,21 @@ export default function ReportDetailsPage() {
 
       {/* ANALYSIS */}
      <Card className="p-6 space-y-4">
-        {/* <h3 className="font-semibold">
-          Expert Analysis ({report.analysis.length})
-        </h3>
+        <h3 className="font-semibold">
+    Comments ({comments.length})
+  </h3>
 
-        {report.analysis.length === 0 && (
-          <p className="text-sm text-muted-foreground">No comments yet</p>
-        )}
+  {comments.length === 0 && (
+    <p className="text-sm text-muted-foreground">
+      No comments yet
+    </p>
+  )}
 
-        {report.analysis.map((c, i) => (
-          <div key={i} className="bg-secondary/30 rounded p-3 text-sm space-y-2">
-            <p className="font-medium">User: {c.user_id}</p>
-            <p className="text-xs text-muted-foreground">{c.timestamp}</p>
-            <p>{c.comment}</p>
-
-            {c.files && c.files.length > 0 && (
-              <div className="grid grid-cols-2 gap-2 mt-2">
-                {c.files.map((f, idx) => (
-                  <img
-                    key={idx}
-                    src={f}
-                    className="rounded border h-24 object-cover"
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        ))}  */}
-
+  <div className="space-y-3">
+    {comments.map((c) => (
+      <CommentItem key={c.id} comment={c} />
+    ))}
+  </div>
         {/* ADD COMMENT */}
         <div className="border-t pt-4 space-y-3">
           <textarea

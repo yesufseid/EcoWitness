@@ -29,17 +29,33 @@ export function Navbar() {
   }
 
   // Restrict access based on role
-  useEffect(() => {
-    if (!user) return
+ useEffect(() => {
+  // Public route: anyone can access /report
+  if (pathname.startsWith("/report")) return
 
-    if (user.role === "user" && !["/report"].some((p) => pathname.startsWith(p))) {
-      router.push("/")
-    } else if (user.role === "student" && !["/students"].some((p) => pathname.startsWith(p))) {
-      router.push("/")
-    } else if (user.role === "regulator" && !["/regulator"].some((p) => pathname.startsWith(p))) {
-      router.push("/")
-    }
-  }, [user, pathname, router])
+  // If NOT logged in → block everything except /report
+  if (!user) {
+    router.push("/")
+    return
+  }
+
+  const roleAllowedPaths: Record<string, string[]> = {
+    user: ["/report"],
+    student: ["/students", "/report"],
+    regulator: ["/regulatory", "/report"],
+  }
+
+  const allowedPaths = roleAllowedPaths[user.role] || []
+
+  const hasAccess = allowedPaths.some((p) =>
+    pathname.startsWith(p)
+  )
+
+  if (!hasAccess) {
+    router.push("/")
+  }
+}, [user, pathname, router])
+
 
   return (
     <nav className="sticky top-0 z-50 w-full bg-background border-b border-border shadow-sm">
@@ -54,6 +70,9 @@ export function Navbar() {
 
         {/* Right Side */}
         <div className="flex items-center gap-3">
+            <Button size="sm" className="bg-accent hover:bg-accent/90" onClick={() => router.push("/report")}>
+              Report Now
+            </Button>
           {!user ? (
             <>
               <Button variant="ghost" size="sm" onClick={() => router.push("/login")}>
@@ -66,16 +85,17 @@ export function Navbar() {
           ) : (
             <>
               {/* Report Now button only for "user" role */}
-              {user.role === "user" && (
-                <Button size="sm" className="bg-accent hover:bg-accent/90" onClick={() => router.push("/report")}>
-                  Report Now
-                </Button>
-              )}
                 {user.role === "student" && (
                 <Button size="sm" className="bg-accent hover:bg-accent/90" onClick={() => router.push("/students/dashboard")}>
                   Dashboard
                 </Button>
               )}
+              {user.role === "regulator" && (
+                <Button size="sm" className="bg-accent hover:bg-accent/90" onClick={() => router.push("/regulatory/dashboard")}>
+                  Dashboard
+                </Button>
+              )}
+
 
               {/* Profile Circle */}
               <div

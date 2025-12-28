@@ -21,8 +21,7 @@ export default function LoginPage() {
 
     try {
       await login(email, password)   // ✅ AUTH HERE
-      router.push("/")               // ✅ SUCCESS
-      router.refresh()
+        window.location.href = "/";              // ✅ SUCCESS
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed")
     } finally {
