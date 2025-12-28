@@ -30,15 +30,24 @@ export function Navbar() {
 
   // Restrict access based on role
  useEffect(() => {
-  // Public route: anyone can access /report
-  if (pathname.startsWith("/report")) return
+  const publicRoutes = ["/report", "/login", "/signup"]
 
-  // If NOT logged in → block everything except /report
-  if (!user) {
-    router.push("/")
+  // ✅ Allow public routes for everyone
+  if (publicRoutes.some((p) => pathname.startsWith(p))) {
+    // 🚫 Logged-in users should NOT see login/signup
+    if (user && (pathname.startsWith("/login") || pathname.startsWith("/signup"))) {
+      router.push("/")
+    }
     return
   }
 
+  // ❌ Not logged in → block everything else
+  if (!user) {
+    router.push("/login")
+    return
+  }
+
+  // 🔐 Role-based access
   const roleAllowedPaths: Record<string, string[]> = {
     user: ["/report"],
     student: ["/students", "/report"],
@@ -55,6 +64,7 @@ export function Navbar() {
     router.push("/")
   }
 }, [user, pathname, router])
+
 
 
   return (

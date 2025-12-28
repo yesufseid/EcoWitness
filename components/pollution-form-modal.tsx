@@ -40,7 +40,7 @@ export function PollutionFormModal({lat,lng}: PollutionFormModalProps) {
     }
 
     localStorage.setItem("draftReport", JSON.stringify(draftData))
-    router.push("/draft")
+    router.push("report/draft")
   }
 
   return (
